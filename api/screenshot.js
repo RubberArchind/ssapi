@@ -1,40 +1,36 @@
-const playwright = require("playwright-aws-lambda");
-
-module.exports = async (req, res) => {
-  let browser = null;
-  const { query } = req;
-  try {
-    if (query.url && isValidUrl(query.url)) {
-      browser = await playwright.launchChromium({ headless: true });
-      const context = await browser.newContext();
-      const page = await context.newPage();
-      await page.goto(query.url);
-      await page.$('xpath=//div[@id=done]');
-      const screenshot = await page.screenshot({ type: "png" });
-      res.setHeader("Content-Type", "image/png");
-      res.status(200).send(screenshot);
-
-    } else throw "Please provide a valid url";
-
-  } catch (error) {
-    res.status(500).send({
-      status: "Failed",
-      error
-    });
-
-  } finally {
-    if (browser !== null) {
-      await browser.close();
+const express = require('express'),
+    app = express(),
+    puppeteer = require('puppeteer');
+app.get("/", async (request, response) => {
+    try {
+        const browser = await puppeteer.launch({          
+            args: ['--no-sandbox', '--disable-setuid-sandbox', "--proxy-server='direct://'", '--proxy-bypass-list=*', ],
+        });
+        const page = (await browser.pages())[0];
+        await page.setViewport({
+            width: 1366,
+            height: 768
+        });
+        url='';
+        for(key in request.query){
+          if(key=='url'){
+            url+=request.query[key];
+          }else{
+            url+='&'+key+'='+request.query[key];
+          }
+        }        
+        console.log(url)
+        await page.goto(url); // Read url query parameter.
+        await page.waitForSelector('#done');
+        var element = await page.$('body'); 
+        var image = await element.screenshot();
+        await browser.close();
+        response.set('Content-Type', 'image/png');
+        response.send(image);
+    } catch (error) {
+        console.log(error);
     }
-  }
-
-};
-
-function isValidUrl(string) {
-  try {
-    new URL(string);
-  } catch (_) {
-    return false;
-  }
-  return true;
-}
+});
+var listener = app.listen(3000, function() {
+    console.log('Your app is listening on port ' + listener.address().port);
+});

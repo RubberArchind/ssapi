@@ -4,12 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node api/screenshot.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "playwright-aws-lambda": "^0.6.0",
-    "playwright-core": "^1.8.0"
+    "express": "^4.17.1",
+    "puppeteer": "^5.5.0"
   }
 }
